@@ -62,6 +62,7 @@ function App() {
 
       const preprocessedData = imageDataToTensor(pixels)
       const result = await runPoolModel(preprocessedData)
+      // @ts-expect-error - result
       const boxes = process_output(result, YOLO_IMAGE_SIZE, YOLO_IMAGE_SIZE)
       const canvas = canvasRef.current
       if (!canvas)
@@ -79,7 +80,7 @@ function App() {
       })
     }
     catch (error) {
-      console.error('🚀 ~ handleInference ~ error:', error)
+      console.error(error)
     }
     finally {
       setLoading(false)

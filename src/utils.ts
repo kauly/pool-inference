@@ -44,8 +44,9 @@ async function runPoolModel(preprocessedData: Tensor) {
   try {
     const model = await ort.InferenceSession.create('/pool-model.onnx')
     const outputs = await model.run({ images: preprocessedData })
+    const result = outputs.output0.data as Float32Array
 
-    return outputs.output0.data
+    return result
   }
   catch (error) {
     console.error(error)
@@ -78,6 +79,7 @@ function process_output(output: number[], img_width: number, img_height: number)
     const y1 = (yc - h / 2) / 640 * img_height
     const x2 = (xc + w / 2) / 640 * img_width
     const y2 = (yc + h / 2) / 640 * img_height
+    // @ts-expect-error - label is the only string in the array
     boxes.push([x1, y1, x2, y2, label, prob])
   }
 
