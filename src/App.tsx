@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { ChangeEvent } from 'react'
 
 import { imageDataToTensor, process_output, runPoolModel } from './utils'
+import defaultImage from './assets/FIMI0238.jpg'
 
 const image = new Image()
 
@@ -17,16 +18,21 @@ const initialImageProps: ImageProps = {
 }
 
 function App() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [canvas, setCanvas] = useState<HTMLCanvasElement>()
   const [loading, setLoading] = useState(false)
   const [imageProps, setImageProps] = useState<ImageProps>(initialImageProps)
+
+  const handleCanvasRef = useCallback((node: HTMLCanvasElement) => {
+    if (node)
+      setCanvas(node)
+  }, [])
 
   // draw the image on the canvas
   const handleImageUpload = async (ev: ChangeEvent<HTMLInputElement>) => {
     const file = ev.target.files?.[0]
     if (!file)
       return
-    const canvas = canvasRef.current
+
     if (!canvas)
       return
     canvas.width = YOLO_IMAGE_SIZE
@@ -64,7 +70,7 @@ function App() {
       const result = await runPoolModel(preprocessedData)
       // @ts-expect-error - result
       const boxes = process_output(result, YOLO_IMAGE_SIZE, YOLO_IMAGE_SIZE)
-      const canvas = canvasRef.current
+
       if (!canvas)
         return
       const ctx = canvas.getContext('2d')
@@ -86,6 +92,25 @@ function App() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!canvas)
+      return
+    canvas.width = YOLO_IMAGE_SIZE
+    canvas.height = YOLO_IMAGE_SIZE
+    const ctx = canvas.getContext('2d')
+    if (!ctx)
+      return
+    image.src = defaultImage
+    image.onload = () => {
+      ctx.drawImage(image, 0, 0, YOLO_IMAGE_SIZE, YOLO_IMAGE_SIZE)
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      setImageProps({
+        url: defaultImage,
+        imageData: imgData,
+      })
+    }
+  }, [canvas])
 
   return (
     <div className="w-full bg-slate-800">
@@ -113,7 +138,7 @@ function App() {
             className="rounded-md"
             width="800"
             height="600"
-            ref={canvasRef}
+            ref={handleCanvasRef}
           />
         </div>
       </div>
