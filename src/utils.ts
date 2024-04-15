@@ -67,7 +67,7 @@ function process_output(output: number[], img_width: number, img_height: number)
     const [class_id, prob] = [...Array(80).keys()]
       .map(col => [col, output[8400 * (col + 4) + index]])
       .reduce((accum, item) => item[1] > accum[1] ? item : accum, [0, 0])
-    if (prob < 0.5)
+    if (prob < 0.6)
       continue
 
     const label = yolo_classes[class_id]
