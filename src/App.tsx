@@ -1,46 +1,48 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ChangeEvent } from 'react'
 
 import { imageDataToTensor, process_output, runPoolModel } from './utils'
 import defaultImage from './assets/FIMI0238.jpg'
 
-const image = new Image()
+const YOLO_IMAGE_SIZE = 640
 
+const image = new Image()
+const canvas = document.createElement('canvas')
+canvas.width = YOLO_IMAGE_SIZE
+canvas.height = YOLO_IMAGE_SIZE
 interface ImageProps {
   url?: string
   imageData?: ImageData
 }
 
-const YOLO_IMAGE_SIZE = 640
 const initialImageProps: ImageProps = {
-  url: '',
+  url: defaultImage,
   imageData: undefined,
 }
 
 function App() {
-  const [canvas, setCanvas] = useState<HTMLCanvasElement>()
   const [loading, setLoading] = useState(false)
   const [imageProps, setImageProps] = useState<ImageProps>(initialImageProps)
-
-  const handleCanvasRef = useCallback((node: HTMLCanvasElement) => {
-    if (node)
-      setCanvas(node)
-  }, [])
 
   // draw the image on the canvas
   const handleImageUpload = async (ev: ChangeEvent<HTMLInputElement>) => {
     const file = ev.target.files?.[0]
+
     if (!file)
       return
 
     if (!canvas)
       return
+
     canvas.width = YOLO_IMAGE_SIZE
     canvas.height = YOLO_IMAGE_SIZE
     const ctx = canvas.getContext('2d')
+
     if (!ctx)
       return
+
     const url = URL.createObjectURL(file)
+
     if (imageProps.url)
       URL.revokeObjectURL(imageProps.url)
 
@@ -84,6 +86,15 @@ function App() {
         ctx.strokeRect(x1, y1, x2 - x1, y2 - y1)
         ctx.fillText(`${objectType} ${probability.toFixed(2)}`, x1, y1 - 5)
       })
+
+      // get an image  from the canvas
+      const url = canvas.toDataURL()
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+
+      setImageProps({
+        url,
+        imageData: imgData,
+      })
     }
     catch (error) {
       console.error(error)
@@ -94,10 +105,6 @@ function App() {
   }
 
   useEffect(() => {
-    if (!canvas)
-      return
-    canvas.width = YOLO_IMAGE_SIZE
-    canvas.height = YOLO_IMAGE_SIZE
     const ctx = canvas.getContext('2d')
     if (!ctx)
       return
@@ -110,12 +117,12 @@ function App() {
         imageData: imgData,
       })
     }
-  }, [canvas])
+  }, [])
 
   return (
-    <div className="w-full bg-slate-800">
-      <div className="h-screen container mx-auto flex justify-center">
-        <div className="flex flex-col justify-center space-y-8">
+    <div className="w-full bg-slate-800 ">
+      <div className="h-screen container mx-auto flex max-w-4xl p-8">
+        <div className="flex flex-col w-full space-y-8">
           <p className="text-4xl text-blue-400">YOLO pool detection</p>
           <div className="flex justify-between">
             <div>
@@ -131,15 +138,11 @@ function App() {
               />
             </div>
             <button onClick={handleInference} className="bg-blue-400 rounded-lg text-white p-2">
-              {loading ? 'loading' : 'inference'}
+              {loading ? 'loading' : 'Detect'}
             </button>
           </div>
-          <canvas
-            className="rounded-md"
-            width="800"
-            height="600"
-            ref={handleCanvasRef}
-          />
+          <img className="aspect-video" src={imageProps.url} />
+
         </div>
       </div>
     </div>
